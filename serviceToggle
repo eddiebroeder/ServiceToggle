@@ -1,0 +1,59 @@
+#!/usr/bin/perl -w
+use strict;
+
+use POSIX;
+use HTTP::Daemon;
+use HTTP::Status;
+
+$SIG{'PIPE'} = 'IGNORE';
+
+my $PORT = 22001; # needs to run as root
+my $SERVICE_TO_TOGGLE = "cron";
+
+&daemonize();
+my $daemon = HTTP::Daemon->new(ReuseAddr => 1, LocalPort => $PORT) or die "Couldn't start server: $!\n";
+
+while (my $connection = $daemon->accept()) {
+    while (my $request = $connection->get_request()) {
+        if ($request->method eq "GET" and $request->uri->path eq "/") {
+            $connection->send_status_line; # send status 200
+            $connection->send_response("Content-type: text/html");
+            print $connection "<a href='/toggle'>
+                                <button>Toggle Service</button>
+                               </a>"
+        }
+        elsif ($request->method eq "GET" and $request->uri->path eq "/toggle") {
+            my $status = system("service $SERVICE_TO_TOGGLE status");
+            if ($status == 0) {
+                system("service $SERVICE_TO_TOGGLE stop");
+            }
+            else {
+                system("service $SERVICE_TO_TOGGLE start");
+            }
+        }
+        else {
+            $connection->send_error(RC_FORBIDDEN);
+        }
+    }
+    $connection->close();
+}
+
+
+#
+# Run this program in the background
+#
+sub daemonize() {
+    open (STDIN, "<", "/dev/null") or &failWithMessage("Couldn't open /dev/null to STDIN ($!)");
+    open (STDOUT, ">", "/dev/null") or &failWithMessage("Couldn't redirect STDOUT ($!)");
+    &forkAndExitParent();
+    chdir("/");
+    setsid();
+    &forkAndExitParent();
+}
+
+sub forkAndExitParent() {
+    my $pid = fork;
+    exit(0) if $pid;
+    exit(1) if !defined $pid;
+}
+
