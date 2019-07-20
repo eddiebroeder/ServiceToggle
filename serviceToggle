@@ -7,7 +7,7 @@ use HTTP::Status;
 
 $SIG{'PIPE'} = 'IGNORE';
 
-my $PORT = 22001; # needs to run as root
+my $PORT = 80; # needs to run as root
 my $SERVICE_TO_TOGGLE = "cron";
 
 &daemonize();
