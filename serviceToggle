@@ -43,8 +43,8 @@ while (my $connection = $daemon->accept()) {
 # Run this program in the background
 #
 sub daemonize() {
-    open (STDIN, "<", "/dev/null") or &failWithMessage("Couldn't open /dev/null to STDIN ($!)");
-    open (STDOUT, ">", "/dev/null") or &failWithMessage("Couldn't redirect STDOUT ($!)");
+    open (STDIN, "<", "/dev/null") or die "Couldn't open /dev/null to STDIN ($!)\n";
+    open (STDOUT, ">", "/dev/null") or die "Couldn't redirect STDOUT ($!)\n";
     &forkAndExitParent();
     chdir("/");
     setsid();
